@@ -1,0 +1,391 @@
+"use client";
+
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+
+export type Language = "en" | "fr";
+
+const translations: Record<string, string> = {
+  "Home": "Accueil",
+  "Main navigation": "Navigation principale",
+  "Question category": "Catégorie de question",
+  "Company practice": "Entraînement par entreprise",
+  "Switch language to French": "Passer la langue en français",
+  "Passer la langue en anglais": "Switch language to English",
+  "Switch to French": "Passer en français",
+  "Passer en anglais": "Switch to English",
+  "Meryy Interview Studio": "Meryy Interview Studio",
+  "A thoughtful space to practise for interviews, prepare for opportunities, and review your recordings.": "Un espace serein pour préparer vos entretiens, saisir de nouvelles opportunités et réécouter vos enregistrements.",
+  "A quieter kind of preparation": "Une préparation plus sereine",
+  "Sign in": "Se connecter",
+  "Practise interview questions at your own pace.": "Entraînez-vous aux questions d’entretien à votre rythme.",
+  "Prepare for each role in a dedicated workspace.": "Préparez chaque poste dans un espace dédié.",
+  "Listen back to your saved practice answers.": "Réécoutez vos réponses d’entraînement enregistrées.",
+  "Manage your general question bank.": "Gérez votre banque générale de questions.",
+  "Your interview studio": "Votre studio d’entretien",
+  "Delete this saved recording? This cannot be undone.": "Supprimer cet enregistrement ? Cette action est irréversible.",
+  "Could not delete recording.": "Impossible de supprimer l’enregistrement.",
+  "Recording deleted from Google Drive.": "Enregistrement supprimé de Google Drive.",
+  "Go to General Practice": "Accéder à la pratique générale",
+  "Premium Interview Studio": "Studio premium de préparation aux entretiens",
+  "Prepare for interviews, build company workspaces, and save recordings privately to Google Drive.": "Préparez vos entretiens, créez des espaces par entreprise et enregistrez vos prises en privé dans Google Drive.",
+  "General Practice": "Pratique générale",
+  "Company Preparation": "Préparation par entreprise",
+  "Recording Library": "Bibliothèque d’enregistrements",
+  "Admin / Question Manager": "Administration / Questions",
+  "Practice with purpose": "S’entraîner avec intention",
+  "Drive connected": "Drive connecté",
+  "Google account connected": "Compte Google connecté",
+  "Sign out": "Se déconnecter",
+  "Your personal practice space": "Votre espace d’entraînement personnel",
+  "Make every answer count.": "Faites compter chaque réponse.",
+  "A focused space to rehearse, record, and review your interview answers. Your recordings stay in your own Google Drive.": "Un espace dédié pour répéter, enregistrer et réécouter vos réponses d’entretien. Vos enregistrements restent dans votre Google Drive.",
+  "Continue with Google": "Continuer avec Google",
+  "Your personal interview studio": "Votre studio personnel de préparation aux entretiens",
+  "Show up ready.": "Soyez prêt le jour J.",
+  "Build confidence one answer at a time. Choose a question, find your rhythm, and keep your best takes close.": "Gagnez en confiance, réponse après réponse. Choisissez une question, trouvez votre rythme et gardez vos meilleures prises à portée de main.",
+  "Practice room": "Salle d’entraînement",
+  "A private space to find your best answer": "Un espace privé pour trouver votre meilleure réponse",
+  "Session · 01": "Session · 01",
+  "HR": "RH",
+  "Technical": "Technique",
+  "Behavioral": "Comportemental",
+  "Personal & career": "Personnel et carrière",
+  "Skills & knowledge": "Compétences et connaissances",
+  "Real situations": "Situations concrètes",
+  "Your interview prompt · ": "Votre question d’entretien · ",
+  "Your next great answer starts with a question.": "Une excellente réponse commence par une question.",
+  "Take a breath, structure your thoughts, and answer as if you're in the room.": "Respirez, structurez vos idées et répondez comme si vous étiez en entretien.",
+  "Loading your question bank from Google Drive…": "Chargement de vos questions depuis Google Drive…",
+  "Generate a prompt to begin your practice session.": "Choisissez une question pour commencer votre entraînement.",
+  "No questions in this category yet. Add questions from Admin / Question Manager.": "Aucune question dans cette catégorie. Ajoutez-en depuis Administration / Questions.",
+  "Stop shuffle": "Arrêter le mélange",
+  "↻  Shuffle question": "↻  Mélanger les questions",
+  "Next question →": "Question suivante →",
+  "Refreshing…": "Actualisation…",
+  "↻ Refresh bank": "↻ Actualiser la liste",
+  "Reveal prepared answer": "Afficher la réponse préparée",
+  "Hide prepared answer": "Masquer la réponse préparée",
+  "Prepared answer": "Réponse préparée",
+  "No prepared answer has been added for this question yet.": "Aucune réponse préparée n’a encore été ajoutée à cette question.",
+  "Choose a question to begin.": "Choisissez une question pour commencer.",
+  "There are no questions in this category yet.": "Il n’y a pas encore de questions dans cette catégorie.",
+  "Question selected. Take a moment to prepare.": "Question sélectionnée. Prenez un moment pour vous préparer.",
+  "Choosing a question… click STOP when ready.": "Sélection d’une question… cliquez sur ARRÊTER quand vous êtes prêt.",
+  "Choose a question first.": "Choisissez d’abord une question.",
+  "Microphone recording requires HTTPS. Open the deployed Vercel website.": "L’enregistrement du microphone nécessite HTTPS. Ouvrez le site déployé sur Vercel.",
+  "Your take is ready. Listen back, then save it to Drive.": "Votre prise est prête. Écoutez-la, puis enregistrez-la dans Drive.",
+  "Recording in progress. Speak naturally and take your time.": "Enregistrement en cours. Parlez naturellement et prenez votre temps.",
+  "Microphone permission was denied. Allow microphone access.": "L’accès au microphone a été refusé. Autorisez son utilisation.",
+  "Could not load interview questions.": "Impossible de charger les questions d’entretien.",
+  "Loading questions from Google Drive…": "Chargement des questions depuis Google Drive…",
+  "Could not load recordings.": "Impossible de charger les enregistrements.",
+  "Could not check your Google sign-in status.": "Impossible de vérifier votre connexion Google.",
+  "Saving your answer to Google Drive…": "Enregistrement de votre réponse dans Google Drive…",
+  "Could not save recording.": "Impossible d’enregistrer la prise.",
+  "Upload failed. Please try again.": "Échec de l’envoi. Veuillez réessayer.",
+  "Saved to Google Drive: ": "Enregistré dans Google Drive : ",
+  "Saving to Drive…": "Enregistrement dans Drive…",
+  "Save to Google Drive": "Enregistrer dans Google Drive",
+  "Save your answer to Google Drive": "Enregistrer votre réponse dans Google Drive",
+  "Review your take": "Réécouter votre prise",
+  "Discard take": "Supprimer la prise",
+  "Recording discarded.": "Enregistrement supprimé.",
+  "Record answer": "Enregistrer la réponse",
+  "Stop recording": "Arrêter l’enregistrement",
+  "Recording live": "Enregistrement en cours",
+  "Session timer": "Durée de la session",
+  "Your personal archive": "Votre archive personnelle",
+  "Recording library": "Bibliothèque d’enregistrements",
+  "Your saved answers, stored privately in Google Drive.": "Vos réponses enregistrées, stockées en privé dans Google Drive.",
+  "Refresh": "Actualiser",
+  "Loading your archive": "Chargement de votre archive",
+  "Your saved takes will appear here.": "Vos enregistrements apparaîtront ici.",
+  "Your library is ready": "Votre bibliothèque est prête",
+  "Your first saved answer will appear here.": "Votre première réponse enregistrée apparaîtra ici.",
+  "Play": "Écouter",
+  "Close player": "Fermer le lecteur",
+  "Version": "Version",
+  "Company preparation": "Préparation par entreprise",
+  "Sign in to continue.": "Connectez-vous pour continuer.",
+  "Company workspaces are stored privately in your Google Drive.": "Les espaces entreprise sont stockés en privé dans votre Google Drive.",
+  "Your next opportunity, thoughtfully prepared": "Préparez votre prochaine opportunité avec soin",
+  "Company preparation.": "Préparation par entreprise.",
+  "Build a private workspace for every role. Your research, questions, and prepared answers stay in your Google Drive.": "Créez un espace privé pour chaque poste. Vos recherches, questions et réponses préparées restent dans votre Google Drive.",
+  "Workspace details": "Informations de l’espace",
+  "A new opportunity": "Une nouvelle opportunité",
+  "Edit company": "Modifier l’entreprise",
+  "Add a company": "Ajouter une entreprise",
+  "Company name": "Nom de l’entreprise",
+  "Position": "Poste",
+  "Website": "Site web",
+  "Description": "Description",
+  "Research notes": "Notes de recherche",
+  "What should you remember about this company?": "Que souhaitez-vous retenir sur cette entreprise ?",
+  "Role you are preparing for": "Poste pour lequel vous vous préparez",
+  "A short company overview": "Une brève présentation de l’entreprise",
+  "Create workspace": "Créer l’espace",
+  "Save changes": "Enregistrer les modifications",
+  "Cancel": "Annuler",
+  "Close": "Fermer",
+  "Clear form": "Vider le formulaire",
+  "Your interview pipeline": "Vos entretiens à venir",
+  "Company workspaces": "Espaces entreprise",
+  "Add company": "Ajouter une entreprise",
+  "Open workspace": "Ouvrir l’espace",
+  "Edit": "Modifier",
+  "Delete": "Supprimer",
+  "question": "question",
+  "questions": "questions",
+  "Position not specified": "Poste non précisé",
+  "Opening your workspaces": "Ouverture de vos espaces",
+  "Syncing with Google Drive.": "Synchronisation avec Google Drive.",
+  "Your preparation space starts here": "Votre espace de préparation commence ici",
+  "Add a company to keep role research and practice questions in one place.": "Ajoutez une entreprise pour réunir vos recherches et questions d’entretien.",
+  "Updated": "Mis à jour",
+  "Delete {name} and its questions from Google Drive?": "Supprimer {name} et ses questions de Google Drive ?",
+  "{name} workspace deleted.": "Espace {name} supprimé.",
+  "Company details updated.": "Informations de l’entreprise mises à jour.",
+  "Company information updated.": "Informations de l’entreprise mises à jour.",
+  "Company workspace created.": "Espace entreprise créé.",
+  "Could not load companies.": "Impossible de charger les entreprises.",
+  "Could not save company.": "Impossible d’enregistrer l’entreprise.",
+  "Could not delete company.": "Impossible de supprimer l’entreprise.",
+  "Add question": "Ajouter une question",
+  "All companies": "Toutes les entreprises",
+  "All company workspaces": "Tous les espaces entreprise",
+  "Company workspace": "Espace entreprise",
+  "Edit details": "Modifier les informations",
+  "Start Company Practice": "Commencer l’entraînement",
+  "About the company": "À propos de l’entreprise",
+  "Your research notes": "Vos notes de recherche",
+  "Make every answer your own": "Faites de chaque réponse la vôtre",
+  "Question bank": "Banque de questions",
+  "question bank": "banque de questions",
+  "Edit question": "Modifier la question",
+  "Search your questions": "Rechercher dans vos questions",
+  "All categories": "Toutes les catégories",
+  "No category": "Sans catégorie",
+  "company preparation": "préparation par entreprise",
+  "Company fit": "Adéquation avec l’entreprise",
+  "Role-specific": "Spécifique au poste",
+  "Other": "Autre",
+  "HR, Technical, Behavioral…": "RH, technique, comportemental…",
+  "What might they ask you?": "Quelles questions pourrait-on vous poser ?",
+  "Structure your key points in your own words…": "Structurez les idées clés avec vos propres mots…",
+  "Optional reminders": "Rappels facultatifs",
+  "Interview question": "Question d’entretien",
+  "Notes": "Notes",
+  "Save question": "Enregistrer la question",
+  "New question": "Nouvelle question",
+  "Add to your preparation": "Ajouter à votre préparation",
+  "Refine your response": "Améliorer votre réponse",
+  "Question added.": "Question ajoutée.",
+  "Question updated.": "Question mise à jour.",
+  "Question deleted.": "Question supprimée.",
+  "Delete this question and its prepared answer?": "Supprimer cette question et sa réponse préparée ?",
+  "Your question bank is ready": "Votre banque de questions est prête",
+  "Add a question and prepare an answer to start your practice.": "Ajoutez une question et préparez une réponse pour commencer.",
+  "No questions match your search": "Aucune question ne correspond à votre recherche",
+  "Try another search or category.": "Essayez une autre recherche ou catégorie.",
+  "Could not load this workspace.": "Impossible de charger cet espace.",
+  "Could not update company.": "Impossible de mettre à jour l’entreprise.",
+  "Could not save question.": "Impossible d’enregistrer la question.",
+  "Could not delete question.": "Impossible de supprimer la question.",
+  "Could not load questions.": "Impossible de charger les questions.",
+  "Add at least one question before starting company practice.": "Ajoutez au moins une question avant de commencer l’entraînement.",
+  "Your company practice take is ready to review.": "Votre prise d’entraînement est prête à être écoutée.",
+  "Recording your answer…": "Enregistrement de votre réponse…",
+  "Saving your take to Google Drive…": "Enregistrement de votre prise dans Google Drive…",
+  "Company question": "Question entreprise",
+  "Practice mode": "Mode entraînement",
+  "Interview preparation": "Préparation à l’entretien",
+  "New shuffle": "Nouveau mélange",
+  "Exit practice": "Quitter l’entraînement",
+  "Question ": "Question ",
+  " of ": " sur ",
+  "Think it through and answer in your own words before revealing your prepared response.": "Réfléchissez et répondez avec vos propres mots avant d’afficher votre réponse préparée.",
+  "Hide answer": "Masquer la réponse",
+  "Your prepared answer": "Votre réponse préparée",
+  "Rehearse out loud": "Répétez à voix haute",
+  "Recording in progress": "Enregistrement en cours",
+  "Record your answer": "Enregistrez votre réponse",
+  "Saving…": "Enregistrement…",
+  "Discard": "Supprimer",
+  "Previous": "Précédent",
+  "Next question": "Question suivante",
+  "Workspace unavailable": "Espace indisponible",
+  "We couldn't open this company.": "Impossible d’ouvrir cette entreprise.",
+  "Check your connection and try again.": "Vérifiez votre connexion et réessayez.",
+  "Back to companies": "Retour aux entreprises",
+  "HR Questions": "Questions RH",
+  "Technical Questions": "Questions techniques",
+  "Behavioral Questions": "Questions comportementales",
+  "Restricted workspace": "Espace restreint",
+  "Question bank unavailable": "Banque de questions indisponible",
+  "Admin access required.": "Accès administrateur requis.",
+  "We couldn't load the question bank.": "Impossible de charger la banque de questions.",
+  "To grant access, add the signed-in Google account to": "Pour autoriser l’accès, ajoutez le compte Google connecté à",
+  "in your environment settings.": "dans les paramètres d’environnement.",
+  "Return to practice": "Retour à l’entraînement",
+  "Try again": "Réessayer",
+  "Administrator": "Administrateur",
+  "Your general interview library": "Votre bibliothèque d’entretien",
+  "Question manager.": "Gestion des questions.",
+  "Shape the prompts you practise with. Changes are saved privately to Google Drive and appear in General Practice.": "Personnalisez vos questions d’entraînement. Les modifications sont enregistrées dans votre Google Drive et apparaissent dans la pratique générale.",
+  "＋ Add New Question": "＋ Ajouter une question",
+  "HR question bank": "Banque de questions RH",
+  "Technical question bank": "Banque de questions techniques",
+  "Behavioral question bank": "Banque de questions comportementales",
+  "prompt": "question",
+  "prompts": "questions",
+  "Syncing your question bank": "Synchronisation de votre banque de questions",
+  "Reading question files from Google Drive.": "Lecture des fichiers de questions depuis Google Drive.",
+  "No matching questions": "Aucune question correspondante",
+  "No questions in this category": "Aucune question dans cette catégorie",
+  "Try another search phrase.": "Essayez d’autres termes de recherche.",
+  "Add a question to build this part of your practice.": "Ajoutez une question pour enrichir cette partie de votre entraînement.",
+  "Updated ": "Mis à jour le ",
+  "No prepared answer yet.": "Aucune réponse préparée pour le moment.",
+  "Refine your question bank": "Améliorez votre banque de questions",
+  "Add to general practice": "Ajouter à la pratique générale",
+  "Add New Question": "Ajouter une question",
+  "Question *": "Question *",
+  "Write the interview question…": "Saisissez la question d’entretien…",
+  "Optional": "Facultatif",
+  "Add a prepared answer now or come back to it later…": "Ajoutez une réponse préparée ou revenez-y plus tard…",
+  "Separate with commas": "Séparez par des virgules",
+  "Motivation, Strengths, Leadership": "Motivation, qualités, leadership",
+  "Private reminders for your practice…": "Rappels personnels pour votre entraînement…",
+  "Save Question": "Enregistrer la question",
+  "Question updated in Google Drive.": "Question mise à jour dans Google Drive.",
+  "Question added to Google Drive.": "Question ajoutée dans Google Drive.",
+  "Question deleted from Google Drive.": "Question supprimée de Google Drive.",
+  "Delete this ": "Supprimer cette question ",
+  " question? This cannot be undone.": " ? Cette action est irréversible.",
+  "Could not load question bank.": "Impossible de charger la banque de questions.",
+  "Verifying administrator access…": "Vérification de l’accès administrateur…",
+  "Could not verify your Google account.": "Impossible de vérifier votre compte Google.",
+  "Sign in with Google to continue.": "Connectez-vous avec Google pour continuer.",
+  "Sign in with Google to load questions.": "Connectez-vous avec Google pour charger les questions.",
+  "Could not load questions from Google Drive.": "Impossible de charger les questions depuis Google Drive.",
+  "Request body must be valid JSON.": "Le corps de la requête doit être un JSON valide.",
+  "Category must be one of: HR, Technical, Behavioral.": "La catégorie doit être RH, Technique ou Comportemental.",
+  "Question is required and must be no more than 4,000 characters.": "La question est obligatoire et ne doit pas dépasser 4 000 caractères.",
+  "Prepared answer must be no more than 20,000 characters.": "La réponse préparée ne doit pas dépasser 20 000 caractères.",
+  "Prepared answer must be text.": "La réponse préparée doit être du texte.",
+  "Notes must be text.": "Les notes doivent être du texte.",
+  "Notes must be no more than 5,000 characters.": "Les notes ne doivent pas dépasser 5 000 caractères.",
+  "Choose Beginner, Intermediate, or Advanced as the difficulty.": "Choisissez Débutant, Intermédiaire ou Avancé.",
+  "Tags must be a list of up to 20 text values.": "Les étiquettes doivent être une liste de 20 textes maximum.",
+  "A question with this text already exists in that category.": "Une question identique existe déjà dans cette catégorie.",
+  "Question not found.": "Question introuvable.",
+  "Beginner": "Débutant",
+  "Intermediate": "Intermédiaire",
+  "Advanced": "Avancé",
+  "English": "Anglais",
+  "French": "Français",
+  "Questions": "Questions",
+  "Category": "Catégorie",
+  "Difficulty": "Difficulté",
+  "Tags": "Étiquettes",
+  "Search": "Rechercher",
+  "Search questions": "Rechercher des questions",
+  "Filter by category": "Filtrer par catégorie",
+  "Not specified": "Non précisé",
+  "Synced with your private Google Drive": "Synchronisé avec votre Google Drive privé",
+  "Recording not found.": "Enregistrement introuvable.",
+  "Could not play recording.": "Impossible de lire l’enregistrement.",
+  "e.g. Northstar Labs": "ex. Northstar Labs",
+  "Question": "Question",
+  "Could not start microphone: ": "Impossible de démarrer le microphone : ",
+  ". Check your microphone connection.": ". Vérifiez votre microphone.",
+  "Could not start microphone:": "Impossible de démarrer le microphone :",
+  "Preparing your studio…": "Préparation de votre studio…",
+  "Opening your workspace…": "Ouverture de votre espace…",
+  "Question categories": "Catégories de questions",
+  "Search {category} questions": "Rechercher les questions {category}",
+  "Question is required and must be under 2,000 characters.": "La question est obligatoire et ne doit pas dépasser 2 000 caractères.",
+  "Prepared answer is required and must be under 12,000 characters.": "La réponse préparée est obligatoire et ne doit pas dépasser 12 000 caractères.",
+  "Company not found.": "Entreprise introuvable.",
+  "Question details are required.": "Les informations de la question sont obligatoires.",
+  "Company details are required.": "Les informations de l’entreprise sont obligatoires.",
+  "Company name is required and must be under 120 characters.": "Le nom de l’entreprise est obligatoire et ne doit pas dépasser 120 caractères.",
+  "A company with this name already exists.": "Une entreprise portant ce nom existe déjà.",
+  "The selected company question could not be verified.": "Impossible de vérifier la question choisie pour cette entreprise.",
+  "Company and question metadata must be provided together.": "Les informations de l’entreprise et de la question doivent être fournies ensemble.",
+  "Recording is larger than 20 MB. Please record a shorter answer.": "L’enregistrement dépasse 20 Mo. Veuillez enregistrer une réponse plus courte.",
+  "The recording is empty.": "L’enregistrement est vide.",
+  "Audio file and question are required.": "Un fichier audio et une question sont obligatoires.",
+  "Could not create company.": "Impossible de créer l’entreprise.",
+  "Could not create question.": "Impossible de créer la question.",
+};
+
+type LanguageContextValue = {
+  language: Language;
+  setLanguage: (language: Language) => void;
+  t: (text: string) => string;
+};
+
+const LanguageContext = createContext<LanguageContextValue | null>(null);
+
+export function LanguageProvider({ children }: { children: React.ReactNode }) {
+  const [language, setLanguageState] = useState<Language>("en");
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem("interview-studio-language");
+      if (saved === "en" || saved === "fr") setLanguageState(saved);
+    } catch {
+      // Language preference is optional; the application remains usable if storage is unavailable.
+    }
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.title = language === "fr" ? translations["Meryy Interview Studio"] : "Meryy Interview Studio";
+    document.querySelector('meta[name="description"]')?.setAttribute(
+      "content",
+      language === "fr"
+        ? translations["A thoughtful space to practise for interviews, prepare for opportunities, and review your recordings."]
+        : "A thoughtful space to practise for interviews, prepare for opportunities, and review your recordings."
+    );
+  }, [language]);
+
+  const setLanguage = useCallback((next: Language) => {
+    setLanguageState(next);
+    try {
+      window.localStorage.setItem("interview-studio-language", next);
+    } catch {
+      // Keep the new selection for this page session even when storage is unavailable.
+    }
+  }, []);
+
+  const t = useCallback((text: string) => {
+    if (language === "en") return text;
+    return translations[text] || text;
+  }, [language]);
+
+  const value = useMemo(() => ({ language, setLanguage, t }), [language, setLanguage, t]);
+  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
+}
+
+export function useLanguage() {
+  const context = useContext(LanguageContext);
+  if (!context) throw new Error("useLanguage must be used within LanguageProvider.");
+  return context;
+}
+
+export function LanguageSwitcher() {
+  const { language, setLanguage } = useLanguage();
+  return (
+    <button
+      type="button"
+      className="language-switcher"
+      onClick={() => setLanguage(language === "en" ? "fr" : "en")}
+      aria-label={language === "en" ? "Switch language to French" : "Passer la langue en anglais"}
+      title={language === "en" ? "Switch to French" : "Passer en anglais"}
+    >
+      <span aria-hidden="true">文</span>{language === "en" ? "FR" : "EN"}
+    </button>
+  );
+}
