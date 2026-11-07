@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { consumeOAuthState, oauthClient, saveSession } from "@/lib/session";
+import { consumeOAuthState, oauthClient, readSession, saveSession } from "@/lib/session";
 
 export const runtime = "nodejs";
 
@@ -14,10 +14,14 @@ export async function GET(request: NextRequest) {
     const client = oauthClient();
     const { tokens } = await client.getToken(code);
     if (!tokens.access_token) throw new Error("Google did not return an access token.");
+    const existingSession = await readSession();
+    const refreshToken = tokens.refresh_token || existingSession?.refresh_token;
+    if (!refreshToken) throw new Error("Google did not return a refresh token.");
     await saveSession({
       access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token || "",
+      refresh_token: refreshToken,
       expiry_date: tokens.expiry_date || Date.now() + 3500000,
+      session_expires_at: Date.now() + 30 * 24 * 60 * 60 * 1000,
     });
     return NextResponse.redirect(new URL("/", request.url));
   } catch {

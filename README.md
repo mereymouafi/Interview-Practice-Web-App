@@ -115,6 +115,7 @@ Use the **FR / EN** control in the header or sign-in screen to switch the interf
 ## Security and limits
 
 - OAuth tokens are encrypted in an HttpOnly, Secure-in-production cookie using `SESSION_SECRET`.
+- The sign-in cookie expires 30 days after authentication and is retained across browser restarts. Google access tokens are refreshed server-side with the encrypted refresh token without extending the 30-day session.
 - The Google refresh token is never sent to browser JavaScript.
 - Use a private GitHub repository if you prefer.
 - Keep the Vercel environment variables private.

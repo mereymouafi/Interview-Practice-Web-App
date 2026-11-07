@@ -5,11 +5,17 @@ import { google } from "googleapis";
 const COOKIE_NAME = "ip_google_session";
 const STATE_COOKIE = "ip_oauth_state";
 const SESSION_SECRET = process.env.SESSION_SECRET || "";
+const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
 
 export type GoogleSession = {
   access_token: string;
   refresh_token: string;
   expiry_date: number;
+  session_expires_at: number;
+};
+
+type SessionToSave = Omit<GoogleSession, "session_expires_at"> & {
+  session_expires_at?: number;
 };
 
 function key() {
@@ -45,21 +51,42 @@ const cookieOptions = {
   path: "/",
 };
 
-export async function saveSession(session: GoogleSession) {
+export async function saveSession(session: SessionToSave) {
   const jar = await cookies();
-  jar.set(COOKIE_NAME, encrypt(session), { ...cookieOptions, maxAge: 60 * 60 * 24 * 30 });
+  const sessionExpiresAt = session.session_expires_at ?? Date.now() + SESSION_DURATION_MS;
+  const maxAge = Math.max(0, Math.floor((sessionExpiresAt - Date.now()) / 1000));
+  jar.set(
+    COOKIE_NAME,
+    encrypt({ ...session, session_expires_at: sessionExpiresAt }),
+    { ...cookieOptions, maxAge, expires: new Date(sessionExpiresAt) }
+  );
 }
 
 export async function readSession(): Promise<GoogleSession | null> {
   const jar = await cookies();
   const value = jar.get(COOKIE_NAME)?.value;
   if (!value) return null;
-  try { return decrypt<GoogleSession>(value); } catch { return null; }
+  try {
+    const session = decrypt<SessionToSave>(value);
+    const sessionExpiresAt = session.session_expires_at ?? Date.now() + SESSION_DURATION_MS;
+    if (
+      !session.access_token ||
+      !session.refresh_token ||
+      !Number.isFinite(session.expiry_date) ||
+      !Number.isFinite(sessionExpiresAt) ||
+      sessionExpiresAt <= Date.now()
+    ) {
+      return null;
+    }
+    return { ...session, session_expires_at: sessionExpiresAt };
+  } catch {
+    return null;
+  }
 }
 
 export async function clearSession() {
   const jar = await cookies();
-  jar.set(COOKIE_NAME, "", { ...cookieOptions, maxAge: 0 });
+  jar.set(COOKIE_NAME, "", { ...cookieOptions, maxAge: 0, expires: new Date(0) });
 }
 
 export async function saveOAuthState(state: string) {
@@ -94,6 +121,7 @@ export async function driveClient() {
       access_token: credentials.access_token || session.access_token,
       refresh_token: credentials.refresh_token || session.refresh_token,
       expiry_date: credentials.expiry_date || Date.now() + 3_500_000,
+      session_expires_at: session.session_expires_at,
     });
     auth.setCredentials({ ...credentials, refresh_token: credentials.refresh_token || session.refresh_token });
   }
